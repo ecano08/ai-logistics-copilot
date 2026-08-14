@@ -12,5 +12,38 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  ai-service:
+    build:
+      context: ./apps/ai-service
+    container_name: ai-logistics-ai-service
+    ports:
+      - "8000:8000"
+
+  api:
+    build:
+      context: ./apps/api
+    container_name: ai-logistics-api
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: logistics
+      DB_PASSWORD: logistics
+      DB_NAME: logistics
+      AI_SERVICE_URL: http://ai-service:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - ai-service
+
+  web:
+    build:
+      context: ./apps/web
+    container_name: ai-logistics-web
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
 volumes:
   postgres_data:

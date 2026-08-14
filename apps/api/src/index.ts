@@ -31,7 +31,7 @@ app.get("/health", async (_req, res) => {
 
 app.get("/health/ai", async (_req, res) => {
   try {
-    const response = await fetch("http://127.0.0.1:8000/health");
+    const response = await fetch(`${process.env.AI_SERVICE_URL ?? 'http://127.0.0.1:8000'}/health`);
     const data = await response.json();
 
     res.json({
