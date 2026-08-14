@@ -117,4 +117,48 @@ describe('API', () => {
     expect(response.body).toHaveLength(1);
     expect(response.body[0].status).toBe('created');
   });
+
+  it('GET /shipments filters by status', async () => {
+    queryMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 10,
+          tracking_number: 'SHP-1010',
+          status: 'delayed',
+        },
+      ],
+    });
+  
+    const response = await request(app).get('/shipments?status=delayed');
+  
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].status).toBe('delayed');
+  
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining('shipments.status = $1'),
+      ['delayed']
+    );
+  });
+  
+  it('GET /shipments searches by tracking number', async () => {
+    queryMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 1,
+          tracking_number: 'SHP-1001',
+        },
+      ],
+    });
+  
+    const response = await request(app).get('/shipments?tracking=SHP-1001');
+  
+    expect(response.status).toBe(200);
+    expect(response.body[0].tracking_number).toBe('SHP-1001');
+  
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining('shipments.tracking_number ILIKE $1'),
+      ['%SHP-1001%']
+    );
+  });
 });

@@ -1,3 +1,6 @@
+TRUNCATE TABLE shipment_events, shipments, customers
+RESTART IDENTITY CASCADE;
+
 INSERT INTO customers (name, email, phone) VALUES
 ('Acme Corp', 'ops@acme.test', '+52 443 100 0001'),
 ('Globex', 'logistics@globex.test', '+52 443 100 0002'),
@@ -12,10 +15,31 @@ INSERT INTO shipments (
     estimated_delivery,
     latitude,
     longitude
-) VALUES
-('SHP-1001', 1, 'Morelia, Michoacán', 'Ciudad de México', 'in_transit', NOW() + INTERVAL '1 day', 19.432608, -99.133209),
-('SHP-1002', 2, 'Guadalajara, Jalisco', 'Monterrey, Nuevo León', 'delayed', NOW() - INTERVAL '1 day', 25.686614, -100.316113),
-('SHP-1003', 3, 'Querétaro, Querétaro', 'Puebla, Puebla', 'in_transit', NOW() + INTERVAL '2 days', 19.041440, -98.206273);
+)
+SELECT
+    'SHP-' || (1000 + gs),
+    ((gs - 1) % 3) + 1,
+    CASE ((gs - 1) % 4)
+        WHEN 0 THEN 'Morelia, Michoacán'
+        WHEN 1 THEN 'Guadalajara, Jalisco'
+        WHEN 2 THEN 'Querétaro, Querétaro'
+        ELSE 'Ciudad de México'
+    END,
+    CASE ((gs - 1) % 4)
+        WHEN 0 THEN 'Ciudad de México'
+        WHEN 1 THEN 'Monterrey, Nuevo León'
+        WHEN 2 THEN 'Puebla, Puebla'
+        ELSE 'León, Guanajuato'
+    END,
+    CASE
+        WHEN gs % 10 = 0 THEN 'delayed'
+        WHEN gs % 7 = 0 THEN 'delivered'
+        ELSE 'in_transit'
+    END,
+    NOW() + ((gs % 5) - 2) * INTERVAL '1 day',
+    19.432608 + (gs * 0.01),
+    -99.133209 - (gs * 0.01)
+FROM generate_series(1, 50) AS gs;
 
 INSERT INTO shipment_events (
     shipment_id,
@@ -23,12 +47,32 @@ INSERT INTO shipment_events (
     description,
     location,
     occurred_at
-) VALUES
-(1, 'created', 'Shipment created', 'Morelia, Michoacán', NOW() - INTERVAL '2 days'),
-(1, 'in_transit', 'Shipment departed origin facility', 'Morelia, Michoacán', NOW() - INTERVAL '1 day'),
+)
+SELECT
+    id,
+    'created',
+    'Shipment created',
+    origin,
+    created_at
+FROM shipments;
 
-(2, 'created', 'Shipment created', 'Guadalajara, Jalisco', NOW() - INTERVAL '3 days'),
-(2, 'delayed', 'Shipment delayed in transit', 'San Luis Potosí', NOW() - INTERVAL '12 hours'),
-
-(3, 'created', 'Shipment created', 'Querétaro, Querétaro', NOW() - INTERVAL '1 day'),
-(3, 'in_transit', 'Shipment is moving toward destination', 'Querétaro, Querétaro', NOW() - INTERVAL '6 hours');
+INSERT INTO shipment_events (
+    shipment_id,
+    status,
+    description,
+    location,
+    occurred_at
+)
+SELECT
+    id,
+    status,
+    CASE
+        WHEN status = 'delayed'
+            THEN 'Shipment delayed in transit'
+        WHEN status = 'delivered'
+            THEN 'Shipment delivered successfully'
+        ELSE 'Shipment is moving toward destination'
+    END,
+    destination,
+    NOW() - INTERVAL '6 hours'
+FROM shipments;

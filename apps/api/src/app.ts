@@ -28,9 +28,13 @@ app.get("/health", async (_req, res) => {
   }
 });
 
-app.get('/shipments', async (_req, res) => {
+app.get('/shipments', async (req, res) => {
     try {
-      const result = await db.query(`
+      const { status, tracking } = req.query;
+  
+      const values: unknown[] = [];
+  
+      let query = `
         SELECT
           shipments.id,
           shipments.tracking_number,
@@ -45,8 +49,31 @@ app.get('/shipments', async (_req, res) => {
         FROM shipments
         INNER JOIN customers
           ON customers.id = shipments.customer_id
+      `;
+  
+      const conditions: string[] = [];
+  
+      if (status) {
+        values.push(status);
+        conditions.push(`shipments.status = $${values.length}`);
+      }
+  
+      if (tracking) {
+        values.push(`%${tracking}%`);
+        conditions.push(`shipments.tracking_number ILIKE $${values.length}`);
+      }
+  
+      if (conditions.length > 0) {
+        query += `
+          WHERE ${conditions.join(' AND ')}
+        `;
+      }
+  
+      query += `
         ORDER BY shipments.id
-      `);
+      `;
+  
+      const result = await db.query(query, values);
   
       res.json(result.rows);
     } catch {
