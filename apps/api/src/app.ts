@@ -28,6 +28,180 @@ app.get("/health", async (_req, res) => {
   }
 });
 
+app.get('/shipments', async (req, res) => {
+    try {
+      const { status, tracking } = req.query;
+  
+      const values: unknown[] = [];
+  
+      let query = `
+        SELECT
+          shipments.id,
+          shipments.tracking_number,
+          shipments.origin,
+          shipments.destination,
+          shipments.status,
+          shipments.estimated_delivery,
+          shipments.latitude,
+          shipments.longitude,
+          customers.id AS customer_id,
+          customers.name AS customer_name
+        FROM shipments
+        INNER JOIN customers
+          ON customers.id = shipments.customer_id
+      `;
+  
+      const conditions: string[] = [];
+  
+      if (status) {
+        values.push(status);
+        conditions.push(`shipments.status = $${values.length}`);
+      }
+  
+      if (tracking) {
+        values.push(`%${tracking}%`);
+        conditions.push(`shipments.tracking_number ILIKE $${values.length}`);
+      }
+  
+      if (conditions.length > 0) {
+        query += `
+          WHERE ${conditions.join(' AND ')}
+        `;
+      }
+  
+      query += `
+        ORDER BY shipments.id
+      `;
+  
+      const result = await db.query(query, values);
+  
+      res.json(result.rows);
+    } catch {
+      res.status(500).json({
+        status: 'error',
+        message: 'Unable to load shipments',
+      });
+    }
+  });
+
+  app.get('/shipments/:id', async (req, res) => {
+  try {
+    const result = await db.query(
+      `
+      SELECT
+        shipments.id,
+        shipments.tracking_number,
+        shipments.origin,
+        shipments.destination,
+        shipments.status,
+        shipments.estimated_delivery,
+        shipments.latitude,
+        shipments.longitude,
+        customers.id AS customer_id,
+        customers.name AS customer_name,
+        customers.email AS customer_email,
+        customers.phone AS customer_phone
+      FROM shipments
+      INNER JOIN customers
+        ON customers.id = shipments.customer_id
+      WHERE shipments.id = $1
+      `,
+      [req.params.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Shipment not found',
+      });
+    }
+
+    res.json(result.rows[0]);
+  } catch {
+    res.status(500).json({
+      status: 'error',
+      message: 'Unable to load shipment',
+    });
+  }
+});
+
+app.get('/customers/:id', async (req, res) => {
+    try {
+      const result = await db.query(
+        `
+        SELECT
+          id,
+          name,
+          email,
+          phone,
+          created_at,
+          updated_at
+        FROM customers
+        WHERE id = $1
+        `,
+        [req.params.id]
+      );
+  
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Customer not found',
+        });
+      }
+  
+      res.json(result.rows[0]);
+    } catch {
+      res.status(500).json({
+        status: 'error',
+        message: 'Unable to load customer',
+      });
+    }
+  });
+
+  app.get('/shipments/:id/events', async (req, res) => {
+    try {
+      const shipment = await db.query(
+        `
+        SELECT id
+        FROM shipments
+        WHERE id = $1
+        `,
+        [req.params.id]
+      );
+  
+      if (shipment.rows.length === 0) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Shipment not found',
+        });
+      }
+  
+      const result = await db.query(
+        `
+        SELECT
+          id,
+          shipment_id,
+          status,
+          description,
+          location,
+          occurred_at,
+          created_at
+        FROM shipment_events
+        WHERE shipment_id = $1
+        ORDER BY occurred_at ASC
+        `,
+        [req.params.id]
+      );
+  
+      res.json(result.rows);
+    } catch {
+      res.status(500).json({
+        status: 'error',
+        message: 'Unable to load shipment events',
+      });
+    }
+  });
+
 app.get("/health/ai", async (_req, res) => {
   try {
     const response = await fetch(
