@@ -1,4 +1,8 @@
-import type { Shipment, ShipmentEvent } from '../types/shipment';
+import type {
+  Shipment,
+  ShipmentEvent,
+  ShipmentWeather,
+} from "../types/shipment";
 
 const API_URL = 'http://localhost:3000';
 
@@ -21,6 +25,20 @@ export async function getShipmentEvents(
 
   if (!response.ok) {
     throw new Error('Unable to load shipment events');
+  }
+
+  return response.json();
+}
+
+export async function getShipmentWeather(
+  shipmentId: number
+): Promise<ShipmentWeather> {
+  const response = await fetch(
+    `${API_URL}/shipments/${shipmentId}/weather`
+  );
+
+  if (!response.ok) {
+    throw new Error("Unable to load shipment weather");
   }
 
   return response.json();
