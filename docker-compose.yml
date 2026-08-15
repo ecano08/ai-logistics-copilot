@@ -16,6 +16,8 @@ services:
     build:
       context: ./apps/ai-service
     container_name: ai-logistics-ai-service
+    env_file:
+      - ./apps/ai-service/.env
     ports:
       - "8000:8000"
 
