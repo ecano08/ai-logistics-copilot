@@ -4,10 +4,12 @@ import { ShipmentTable } from "./components/ShipmentTable";
 import {
   getShipments,
   getShipmentEvents,
+  getShipmentWeather,
 } from "./services/shipments";
 import type {
   Shipment,
   ShipmentEvent,
+  ShipmentWeather,
 } from "./types/shipment";
 import { ShipmentStats } from "./components/ShipmentStats";
 
@@ -25,6 +27,11 @@ function App() {
     useState<ShipmentEvent[]>([]);
 
   const [eventsLoading, setEventsLoading] = useState(false);
+
+  const [shipmentWeather, setShipmentWeather] =
+    useState<ShipmentWeather | null>(null);
+
+  const [weatherLoading, setWeatherLoading] = useState(false);
 
   useEffect(() => {
     getShipments()
@@ -52,10 +59,29 @@ function App() {
       });
   }, [selectedShipment]);
 
+  useEffect(() => {
+    if (!selectedShipment) {
+      return;
+    }
+
+    getShipmentWeather(selectedShipment.id)
+      .then(setShipmentWeather)
+      .catch(() => {
+        setShipmentWeather(null);
+      })
+      .finally(() => {
+        setWeatherLoading(false);
+      });
+  }, [selectedShipment]);
+
   const handleSelectShipment = (shipment: Shipment) => {
     setSelectedShipment(shipment);
+
     setShipmentEvents([]);
     setEventsLoading(true);
+
+    setShipmentWeather(null);
+    setWeatherLoading(true);
   };
 
   if (loading) {
@@ -152,9 +178,7 @@ function App() {
                 Shipment Detail
               </span>
 
-              <h2>
-                {selectedShipment.tracking_number}
-              </h2>
+              <h2>{selectedShipment.tracking_number}</h2>
             </div>
           </div>
 
@@ -181,6 +205,36 @@ function App() {
               {selectedShipment.status.replace("_", " ")}
             </span>
           </p>
+
+          <h3>Weather</h3>
+
+          {weatherLoading ? (
+            <p>Loading weather...</p>
+          ) : shipmentWeather ? (
+            <div className="weather-grid">
+              <div className="weather-item">
+                <span>Temperature</span>
+                <strong>{shipmentWeather.weather.temperature} °C</strong>
+              </div>
+
+              <div className="weather-item">
+                <span>Precipitation</span>
+                <strong>{shipmentWeather.weather.precipitation} mm</strong>
+              </div>
+
+              <div className="weather-item">
+                <span>Wind speed</span>
+                <strong>{shipmentWeather.weather.windSpeed} km/h</strong>
+              </div>
+
+              <div className="weather-item">
+                <span>Weather code</span>
+                <strong>{shipmentWeather.weather.weatherCode}</strong>
+              </div>
+            </div>
+          ) : (
+            <p>Weather unavailable.</p>
+          )}
 
           <h3>Events</h3>
 

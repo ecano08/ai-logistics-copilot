@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { db } from "./db";
+import { getWeather } from "./services/weather";
 
 export const app = express();
 
@@ -219,6 +220,58 @@ app.get("/health/ai", async (_req, res) => {
     res.status(503).json({
       status: "error",
       ai_service: "disconnected",
+    });
+  }
+});
+
+app.get("/shipments/:id/weather", async (req, res) => {
+  try {
+    const shipmentId = Number(req.params.id);
+
+    const result = await db.query(
+      `
+      SELECT id, latitude, longitude
+      FROM shipments
+      WHERE id = $1
+      `,
+      [shipmentId],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: "Shipment not found",
+      });
+    }
+
+    const shipment = result.rows[0];
+
+    if (
+      shipment.latitude === null ||
+      shipment.longitude === null
+    ) {
+      return res.status(422).json({
+        error: "Shipment has no coordinates",
+      });
+    }
+
+    const weather = await getWeather(
+      Number(shipment.latitude),
+      Number(shipment.longitude),
+    );
+
+    return res.json({
+      shipmentId: shipment.id,
+      location: {
+        latitude: Number(shipment.latitude),
+        longitude: Number(shipment.longitude),
+      },
+      weather,
+    });
+  } catch (error) {
+    console.error("Weather lookup failed:", error);
+
+    return res.status(502).json({
+      error: "Unable to load weather data",
     });
   }
 });

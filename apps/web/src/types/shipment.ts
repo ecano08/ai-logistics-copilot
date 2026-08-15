@@ -20,3 +20,17 @@ export type Shipment = {
     occurred_at: string;
     created_at: string;
   };
+
+  export type ShipmentWeather = {
+    shipmentId: number;
+    location: {
+      latitude: number;
+      longitude: number;
+    };
+    weather: {
+      temperature: number;
+      precipitation: number;
+      windSpeed: number;
+      weatherCode: number;
+    };
+  };
