@@ -65,4 +65,5 @@ def chat(request: ChatRequest):
     return {
         "answer": result.answer,
         "tools_used": result.tools_used,
+        "proposed_actions": result.proposed_actions,
     }
