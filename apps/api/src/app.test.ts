@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import request from "supertest";
 import {
   beforeEach,
@@ -7,9 +8,14 @@ import {
   vi,
 } from "vitest";
 
-const { queryMock, getWeatherMock } = vi.hoisted(() => ({
+const {
+  queryMock,
+  getWeatherMock,
+  fetchMock,
+} = vi.hoisted(() => ({
   queryMock: vi.fn(),
   getWeatherMock: vi.fn(),
+  fetchMock: vi.fn(),
 }));
 
 vi.mock("./db", () => ({
@@ -28,6 +34,9 @@ describe("API", () => {
   beforeEach(() => {
     queryMock.mockReset();
     getWeatherMock.mockReset();
+    fetchMock.mockReset();
+
+    vi.stubGlobal("fetch", fetchMock);
   });
 
   it("GET /health returns API health status", async () => {
@@ -288,5 +297,184 @@ describe("API", () => {
     expect(response.body).toEqual({
       error: "Unable to load weather data",
     });
+  });
+
+  it("GET /knowledge-documents returns knowledge documents", async () => {
+    queryMock.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 1,
+          title: "Shipment Escalation Policy",
+          filename: "shipment-escalation-policy.pdf",
+          content_type: "application/pdf",
+          category: "escalation",
+          status: "ready",
+          source_path: "/data/knowledge-base/demo.pdf",
+          error_message: null,
+        },
+      ],
+    });
+
+    const response = await request(app)
+      .get("/knowledge-documents")
+      .expect(200);
+
+    expect(response.body).toHaveLength(1);
+
+    expect(response.body[0]).toMatchObject({
+      id: 1,
+      title: "Shipment Escalation Policy",
+      status: "ready",
+    });
+  });
+
+  it("POST /knowledge-documents uploads and processes a PDF", async () => {
+    queryMock
+      .mockResolvedValueOnce({
+        rows: [{ id: 10 }],
+      })
+      .mockResolvedValueOnce({
+        rows: [],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 10,
+            title: "Test Policy",
+            filename: "test-policy.pdf",
+            content_type: "application/pdf",
+            category: "test",
+            status: "ready",
+            created_at: "2026-08-16T00:00:00.000Z",
+            updated_at: "2026-08-16T00:00:01.000Z",
+          },
+        ],
+      });
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        text: "Extracted document content",
+        characters: 26,
+      }),
+    });
+
+    const response = await request(app)
+      .post("/knowledge-documents")
+      .field("title", "Test Policy")
+      .field("category", "test")
+      .attach(
+        "file",
+        Buffer.from("%PDF-1.4\nDemo PDF content"),
+        {
+          filename: "test-policy.pdf",
+          contentType: "application/pdf",
+        },
+      );
+
+    expect(response.status).toBe(201);
+
+    expect(response.body).toMatchObject({
+      id: 10,
+      title: "Test Policy",
+      filename: "test-policy.pdf",
+      category: "test",
+      status: "ready",
+      characters: 26,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/documents/extract"),
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+
+    const insertCall = queryMock.mock.calls[0];
+    const uploadedPath = insertCall[1][4] as string;
+
+    if (fs.existsSync(uploadedPath)) {
+      fs.unlinkSync(uploadedPath);
+    }
+  });
+
+  it("POST /knowledge-documents rejects non-PDF files", async () => {
+    const response = await request(app)
+      .post("/knowledge-documents")
+      .attach(
+        "file",
+        Buffer.from("not a pdf"),
+        {
+          filename: "document.txt",
+          contentType: "text/plain",
+        },
+      );
+
+    expect(response.status).toBe(400);
+
+    expect(response.body).toEqual({
+      status: "error",
+      message: "Only PDF files are allowed",
+    });
+
+    expect(queryMock).not.toHaveBeenCalled();
+  });
+
+  it("POST /knowledge-documents/:id/process reprocesses an existing document", async () => {
+    queryMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            title: "Shipment Escalation Policy",
+            filename: "shipment-escalation-policy.pdf",
+            content_type: "application/pdf",
+            category: "escalation",
+            status: "pending",
+            source_path: "/data/knowledge-base/demo.pdf",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            title: "Shipment Escalation Policy",
+            filename: "shipment-escalation-policy.pdf",
+            content_type: "application/pdf",
+            category: "escalation",
+            status: "ready",
+          },
+        ],
+      });
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        text: "Shipment escalation policy content",
+        characters: 34,
+      }),
+    });
+
+    const response = await request(app)
+      .post("/knowledge-documents/1/process")
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      id: 1,
+      title: "Shipment Escalation Policy",
+      status: "ready",
+      characters: 34,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/documents/extract"),
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
   });
 });

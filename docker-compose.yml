@@ -20,6 +20,9 @@ services:
       - ./apps/ai-service/.env
     environment:
       API_BASE_URL: http://api:3000
+      KNOWLEDGE_BASE_PATH: /data/knowledge-base
+    volumes:
+      - knowledge_documents:/data/knowledge-base
     ports:
       - "8000:8000"
 
@@ -34,6 +37,9 @@ services:
       DB_PASSWORD: logistics
       DB_NAME: logistics
       AI_SERVICE_URL: http://ai-service:8000
+      KNOWLEDGE_BASE_PATH: /data/knowledge-base
+    volumes:
+      - knowledge_documents:/data/knowledge-base
     ports:
       - "3000:3000"
     depends_on:
@@ -51,3 +57,4 @@ services:
 
 volumes:
   postgres_data:
+  knowledge_documents:
