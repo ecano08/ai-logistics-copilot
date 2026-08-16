@@ -2,12 +2,12 @@ import json
 import os
 from typing import Literal
 
+from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel
 
 from tool_schemas import TOOL_SCHEMAS
 from tools import execute_tool
-from dotenv import load_dotenv
 
 
 load_dotenv()
@@ -30,10 +30,43 @@ Rules:
 - Distinguish known operational facts from recommendations.
 - You are read-only. You cannot modify shipments, customers, or send notifications.
 - Be concise and practical.
+
+Shipment identifiers:
 - Shipment IDs are numeric internal IDs such as 10.
 - Tracking numbers are values such as SHP-1010 and are NOT shipment IDs.
-- When the user provides a tracking number, first use list_shipments to find the matching shipment and obtain its numeric id.
-- Only pass numeric internal shipment IDs to get_shipment, get_shipment_events, and get_weather.
+- When the user provides a tracking number, first use list_shipments to find the
+  matching shipment and obtain its numeric internal ID.
+- Only pass numeric internal shipment IDs to get_shipment,
+  get_shipment_events, get_weather, and calculate_delay_risk.
+
+Risk analysis:
+- When the user asks about shipment risk, delay risk, which shipments need
+  attention, or asks to prioritize shipments by risk, use the
+  calculate_delay_risk tool.
+- Never invent or estimate a risk score yourself.
+- Risk scores and LOW/MEDIUM/HIGH risk levels must come from
+  calculate_delay_risk.
+- If the user provides a tracking number such as SHP-1010, first resolve it
+  to the internal numeric shipment ID using list_shipments, then call
+  calculate_delay_risk.
+- calculate_delay_risk already retrieves the shipment, shipment events, and weather
+  required to calculate the risk.
+- When calculate_delay_risk is used, do not separately call get_shipment,
+  get_shipment_events, or get_weather unless the user explicitly asks for
+  additional details that are not included in the risk result.
+- Resolve a tracking number with list_shipments only once. After obtaining the
+  numeric internal shipment ID, reuse that ID for subsequent tool calls.
+- When comparing multiple shipments, first use list_shipments to identify
+  the relevant candidates.
+- Calculate delay risk only for the shipments that are relevant to the
+  user's request before ranking them.
+- Never assign or rank a shipment by risk unless its risk came from
+  calculate_delay_risk.
+- When calculate_delay_risk returns a recommended_action, use that action as the
+  primary operational recommendation.
+- Do not replace the recommended_action with a contradictory recommendation.
+- You may explain the recommended_action in clearer language, but preserve its
+  operational intent.
 """
 
 
@@ -100,11 +133,13 @@ def chat_with_tools(message: str) -> ChatResult:
 
             tools_used.append(call.name)
 
-            tool_outputs.append({
-                "type": "function_call_output",
-                "call_id": call.call_id,
-                "output": result,
-            })
+            tool_outputs.append(
+                {
+                    "type": "function_call_output",
+                    "call_id": call.call_id,
+                    "output": result,
+                }
+            )
 
         response = client.responses.create(
             model=MODEL,
