@@ -12,6 +12,7 @@ COPY api_client.py .
 COPY tools.py .
 COPY tool_schemas.py .
 COPY risk.py .
+COPY actions.py .
 
 EXPOSE 8000
 

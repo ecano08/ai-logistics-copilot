@@ -3,7 +3,7 @@ from typing import Any, Callable
 
 from api_client import LogisticsApiClient
 from risk import calculate_delay_risk
-
+from actions import propose_shipment_escalation
 
 api = LogisticsApiClient()
 
@@ -51,6 +51,17 @@ def calculate_delay_risk_tool(shipment_id: int) -> Any:
 
     return result.model_dump()
 
+def propose_shipment_escalation_tool(
+    shipment_id: int,
+    reason: str,
+) -> Any:
+    action = propose_shipment_escalation(
+        shipment_id=shipment_id,
+        reason=reason,
+    )
+
+    return action.model_dump()
+
 TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "list_shipments": list_shipments,
     "get_shipment": get_shipment,
@@ -58,6 +69,7 @@ TOOL_HANDLERS: dict[str, Callable[..., Any]] = {
     "get_shipment_events": get_shipment_events,
     "get_weather": get_weather,
     "calculate_delay_risk": calculate_delay_risk_tool,
+    "propose_shipment_escalation": propose_shipment_escalation_tool,
 }
 
 

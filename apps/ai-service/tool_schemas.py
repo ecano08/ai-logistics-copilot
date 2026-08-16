@@ -111,4 +111,35 @@ TOOL_SCHEMAS = [
         },
         "strict": True,
     },
+    {
+        "type": "function",
+        "name": "propose_shipment_escalation",
+        "description": (
+            "Propose escalating a shipment for operational review. "
+            "This only creates a proposed action and does not execute the escalation. "
+            "The proposed action always requires explicit human approval."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "shipment_id": {
+                    "type": "integer",
+                    "description": "Internal numeric shipment ID.",
+                },
+                "reason": {
+                    "type": "string",
+                    "description": (
+                        "Clear operational reason explaining why the shipment "
+                        "should be escalated."
+                    ),
+                },
+            },
+            "required": [
+                "shipment_id",
+                "reason",
+            ],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
 ]

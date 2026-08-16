@@ -6,6 +6,7 @@ os.environ.setdefault("OPENAI_API_KEY", "test-api-key")
 from fastapi.testclient import TestClient
 
 import main
+from llm import ChatResult
 from main import app
 
 
@@ -66,13 +67,22 @@ def test_analyze_shipment(monkeypatch):
 
 def test_chat(monkeypatch):
     def fake_chat_with_tools(message: str):
-        assert message == "What is happening with shipment SHP-1010?"
+        assert message == "What should we do with SHP-1010?"
 
-        return SimpleNamespace(
-            answer="Shipment SHP-1010 is delayed.",
+        return ChatResult(
+            answer="Shipment requires operational review.",
             tools_used=[
                 "list_shipments",
-                "get_shipment_events",
+                "calculate_delay_risk",
+                "propose_shipment_escalation",
+            ],
+            proposed_actions=[
+                {
+                    "action_type": "ESCALATE_SHIPMENT",
+                    "shipment_id": 10,
+                    "reason": "High delay risk requires operational review.",
+                    "requires_approval": True,
+                }
             ],
         )
 
@@ -85,15 +95,25 @@ def test_chat(monkeypatch):
     response = client.post(
         "/chat",
         json={
-            "message": "What is happening with shipment SHP-1010?",
+            "message": "What should we do with SHP-1010?",
         },
     )
 
     assert response.status_code == 200
+
     assert response.json() == {
-        "answer": "Shipment SHP-1010 is delayed.",
+        "answer": "Shipment requires operational review.",
         "tools_used": [
             "list_shipments",
-            "get_shipment_events",
+            "calculate_delay_risk",
+            "propose_shipment_escalation",
+        ],
+        "proposed_actions": [
+            {
+                "action_type": "ESCALATE_SHIPMENT",
+                "shipment_id": 10,
+                "reason": "High delay risk requires operational review.",
+                "requires_approval": True,
+            }
         ],
     }

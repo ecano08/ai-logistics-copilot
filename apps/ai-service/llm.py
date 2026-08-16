@@ -67,6 +67,20 @@ Risk analysis:
 - Do not replace the recommended_action with a contradictory recommendation.
 - You may explain the recommended_action in clearer language, but preserve its
   operational intent.
+
+Human approval actions:
+- When a shipment has HIGH delay risk and the user asks what should be done,
+  you may use propose_shipment_escalation.
+- propose_shipment_escalation creates only a proposed action.
+- A proposed escalation always requires explicit human approval.
+- Never say or imply that a shipment has already been escalated.
+- Never claim that an operational action was executed unless an execution tool
+  explicitly confirms it.
+- When you create a proposed escalation, clearly tell the user that the action
+  is pending human approval.
+- Do not propose escalation for LOW risk shipments.
+- For MEDIUM risk shipments, prefer monitoring unless the user explicitly asks
+  for an escalation proposal.
 """
 
 
@@ -79,6 +93,7 @@ class ShipmentAnalysis(BaseModel):
 class ChatResult(BaseModel):
     answer: str
     tools_used: list[str]
+    proposed_actions: list[dict]
 
 
 def analyze_shipment_text(prompt: str) -> ShipmentAnalysis:
@@ -104,6 +119,7 @@ def chat_with_tools(message: str) -> ChatResult:
     )
 
     tools_used: list[str] = []
+    proposed_actions: list[dict] = []
 
     for _ in range(MAX_TOOL_ROUNDS):
         function_calls = [
@@ -116,6 +132,7 @@ def chat_with_tools(message: str) -> ChatResult:
             return ChatResult(
                 answer=response.output_text,
                 tools_used=tools_used,
+                proposed_actions=proposed_actions,
             )
 
         tool_outputs = []
@@ -130,6 +147,9 @@ def chat_with_tools(message: str) -> ChatResult:
                 call.name,
                 arguments,
             )
+
+            if call.name == "propose_shipment_escalation":
+                proposed_actions.append(json.loads(result))
 
             tools_used.append(call.name)
 
