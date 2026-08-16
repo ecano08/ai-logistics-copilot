@@ -90,4 +90,25 @@ TOOL_SCHEMAS = [
         },
         "strict": True,
     },
+    {
+        "type": "function",
+        "name": "calculate_delay_risk",
+        "description": (
+            "Calculate a deterministic delay risk score for a shipment using "
+            "its current status, estimated delivery date, shipment events, and weather. "
+            "Use the internal numeric shipment ID, not the tracking number."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "shipment_id": {
+                    "type": "integer",
+                    "description": "Internal numeric shipment ID.",
+                }
+            },
+            "required": ["shipment_id"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
 ]
