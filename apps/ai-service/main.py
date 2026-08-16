@@ -5,7 +5,7 @@ load_dotenv()
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from llm import analyze_shipment_text
+from llm import analyze_shipment_text, chat_with_tools
 
 app = FastAPI()
 
@@ -18,6 +18,9 @@ class ShipmentAnalysisRequest(BaseModel):
     temperature: float
     precipitation: float
     wind_speed: float
+
+class ChatRequest(BaseModel):
+    message: str
 
 
 @app.get("/health")
@@ -53,4 +56,13 @@ Be concise and practical.
         "risk_level": analysis.risk_level,
         "main_reason": analysis.main_reason,
         "recommended_action": analysis.recommended_action,
+    }
+
+@app.post("/chat")
+def chat(request: ChatRequest):
+    result = chat_with_tools(request.message)
+
+    return {
+        "answer": result.answer,
+        "tools_used": result.tools_used,
     }

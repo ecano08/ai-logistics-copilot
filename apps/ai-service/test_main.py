@@ -62,3 +62,38 @@ def test_analyze_shipment(monkeypatch):
         "main_reason": "Weather conditions are stable.",
         "recommended_action": "Continue monitoring the shipment.",
     }
+
+
+def test_chat(monkeypatch):
+    def fake_chat_with_tools(message: str):
+        assert message == "What is happening with shipment SHP-1010?"
+
+        return SimpleNamespace(
+            answer="Shipment SHP-1010 is delayed.",
+            tools_used=[
+                "list_shipments",
+                "get_shipment_events",
+            ],
+        )
+
+    monkeypatch.setattr(
+        main,
+        "chat_with_tools",
+        fake_chat_with_tools,
+    )
+
+    response = client.post(
+        "/chat",
+        json={
+            "message": "What is happening with shipment SHP-1010?",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "answer": "Shipment SHP-1010 is delayed.",
+        "tools_used": [
+            "list_shipments",
+            "get_shipment_events",
+        ],
+    }

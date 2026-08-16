@@ -18,6 +18,8 @@ services:
     container_name: ai-logistics-ai-service
     env_file:
       - ./apps/ai-service/.env
+    environment:
+      API_BASE_URL: http://api:3000
     ports:
       - "8000:8000"
 
