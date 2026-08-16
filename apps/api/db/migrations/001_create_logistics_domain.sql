@@ -1,4 +1,4 @@
-CREATE TABLE customers (
+CREATE TABLE IF NOT EXISTS customers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
     email VARCHAR(150),
@@ -7,7 +7,7 @@ CREATE TABLE customers (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE shipments (
+CREATE TABLE IF NOT EXISTS shipments (
     id SERIAL PRIMARY KEY,
     tracking_number VARCHAR(50) NOT NULL UNIQUE,
     customer_id INTEGER NOT NULL REFERENCES customers(id),
@@ -21,7 +21,7 @@ CREATE TABLE shipments (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE shipment_events (
+CREATE TABLE IF NOT EXISTS shipment_events (
     id SERIAL PRIMARY KEY,
     shipment_id INTEGER NOT NULL REFERENCES shipments(id) ON DELETE CASCADE,
     status VARCHAR(30) NOT NULL,
@@ -31,14 +31,14 @@ CREATE TABLE shipment_events (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_shipments_customer_id
+CREATE INDEX IF NOT EXISTS idx_shipments_customer_id
     ON shipments(customer_id);
 
-CREATE INDEX idx_shipments_status
+CREATE INDEX IF NOT EXISTS idx_shipments_status
     ON shipments(status);
 
-CREATE INDEX idx_shipment_events_shipment_id
+CREATE INDEX IF NOT EXISTS idx_shipment_events_shipment_id
     ON shipment_events(shipment_id);
 
-CREATE INDEX idx_shipment_events_occurred_at
+CREATE INDEX IF NOT EXISTS idx_shipment_events_occurred_at
     ON shipment_events(occurred_at);

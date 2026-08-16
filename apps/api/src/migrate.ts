@@ -4,15 +4,23 @@ import { db } from './db';
 
 async function migrate() {
   try {
-    const migrationPath = path.resolve(
-      'db/migrations/001_create_logistics_domain.sql'
-    );
+    const migrationsDir = path.resolve('db/migrations');
 
-    const sql = fs.readFileSync(migrationPath, 'utf8');
+    const migrationFiles = fs
+      .readdirSync(migrationsDir)
+      .filter((file) => file.endsWith('.sql'))
+      .sort();
 
-    await db.query(sql);
+    for (const file of migrationFiles) {
+      const migrationPath = path.join(migrationsDir, file);
+      const sql = fs.readFileSync(migrationPath, 'utf8');
 
-    console.log('Migration completed successfully.');
+      console.log(`Running migration: ${file}`);
+
+      await db.query(sql);
+    }
+
+    console.log('Migrations completed successfully.');
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);

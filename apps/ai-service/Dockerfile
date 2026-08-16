@@ -14,6 +14,7 @@ COPY tool_schemas.py .
 COPY risk.py .
 COPY actions.py .
 COPY observability.py .
+COPY document_processor.py .
 
 EXPOSE 8000
 
