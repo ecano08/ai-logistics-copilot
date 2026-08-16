@@ -8,6 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py .
 COPY llm.py .
+COPY api_client.py .
+COPY tools.py .
+COPY tool_schemas.py .
 
 EXPOSE 8000
 
