@@ -11,6 +11,7 @@ jobs:
   web:
     name: Web
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     defaults:
       run:
@@ -39,6 +40,7 @@ jobs:
   api:
     name: API
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     defaults:
       run:
@@ -67,6 +69,10 @@ jobs:
   ai-service:
     name: AI Service
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      OPENAI_API_KEY: test-api-key
 
     defaults:
       run:
@@ -87,4 +93,22 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Test
-        run: pytest
+        run: pytest -v
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Build Web image
+        run: docker build -t ai-logistics-web-ci ./apps/web
+
+      - name: Build API image
+        run: docker build -t ai-logistics-api-ci ./apps/api
+
+      - name: Build AI Service image
+        run: docker build -t ai-logistics-ai-service-ci ./apps/ai-service
