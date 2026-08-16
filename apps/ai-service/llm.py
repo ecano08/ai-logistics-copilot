@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import BaseModel
 
+from observability import log_event
 from tool_schemas import TOOL_SCHEMAS
 from tools import execute_tool
 
@@ -143,15 +144,29 @@ def chat_with_tools(message: str) -> ChatResult:
             except json.JSONDecodeError:
                 arguments = {}
 
+            log_event(
+                "tool_call_started",
+                tool=call.name,
+                arguments=arguments,
+            )
+
             result = execute_tool(
                 call.name,
                 arguments,
             )
 
-            if call.name == "propose_shipment_escalation":
-                proposed_actions.append(json.loads(result))
+            log_event(
+                "tool_call_finished",
+                tool=call.name,
+                success=True,
+            )
 
             tools_used.append(call.name)
+
+            if call.name == "propose_shipment_escalation":
+                proposed_actions.append(
+                    json.loads(result)
+                )
 
             tool_outputs.append(
                 {
