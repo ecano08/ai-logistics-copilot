@@ -1,504 +1,189 @@
 # AI Logistics Copilot
 
-AI-powered logistics operations copilot that demonstrates how LLMs can safely interact with operational systems, external APIs, deterministic business logic, and human approval workflows.
+AI Logistics Copilot is a project exploring how AI can support logistics teams when operational decisions depend on changing conditions, external information, and human judgment.
 
-The project is designed as a portfolio-grade example of an AI-enabled operational system rather than a standalone chatbot.
+The goal is not to automate logistics blindly, but to understand how AI can help people **identify risks earlier, gather relevant context, recommend actions, and make better operational decisions while keeping humans in control**.
 
-## What It Does
+> **Active Development** — The project is currently under construction. The core architecture is in place, and logistics workflows, external data integrations, AI reasoning, and human-in-the-loop capabilities are being added incrementally.
 
-The copilot helps logistics operators investigate shipments, analyze delay risk, prioritize operational issues, and prepare actions that require human approval.
+## Why I Built This
 
-Example:
+Logistics interested me because it is a good example of a real-world environment where software has to deal with uncertainty.
 
-```text
-Operator asks about shipment SHP-1010
-        ↓
-LLM resolves the tracking number
-        ↓
-Node API retrieves operational data
-        ↓
-Deterministic risk engine evaluates:
-- shipment status
-- estimated delivery date
-- shipment events
+A shipment can be planned correctly and still be affected by weather, delays, changing conditions, external services, or operational decisions made during the day.
+
+That led me to a question:
+
+**Could AI help an operations team understand what is happening, identify potential risks, and recommend what to do next without taking control away from the people responsible for the operation?**
+
+I started AI Logistics Copilot to explore that problem.
+
+Rather than building an AI assistant that only answers questions, I wanted to understand what happens when an AI system has to work with real operational data, external information, business rules, and actions that may have consequences.
+
+The project is also a way for me to learn how AI systems should behave when the answer is not always obvious.
+
+As I build it, I am exploring questions such as:
+
+- How much context does an AI system need before making a useful recommendation?
+- How should it communicate uncertainty or risk?
+- Which decisions can be automated safely?
+- Which actions should always require human approval?
+- How can we measure whether an AI recommendation is actually useful?
+
+The biggest idea behind the project is simple:
+
+**AI should help people make better decisions, not remove them from the decision-making process.**
+
+AI Logistics Copilot is still evolving, and the development process itself is part of what I want the project to demonstrate: taking an idea, turning it into a working system, testing its limitations, and improving it incrementally.
+
+## What This Project Demonstrates
+
+- **Problem-driven product thinking** — Starting from an operational problem rather than adding AI to an application without a clear reason.
+- **End-to-end engineering** — Building the frontend, backend, AI service, database, infrastructure, testing, and CI as one system.
+- **Applied AI** — Exploring LLMs, tool calling, external data, and AI-assisted operational reasoning.
+- **Human-centered automation** — Designing workflows where AI can recommend actions while important decisions remain under human control.
+- **Reliability mindset** — Treating testing, observability, failure handling, and evaluation as part of the AI system itself.
+- **Incremental development** — Building the project through focused milestones instead of treating it as a one-shot prototype.
+
+## The Problem
+
+Logistics operations often depend on information coming from multiple places:
+
+- shipment and delivery data
+- operational status
 - weather conditions
-        ↓
-Risk: HIGH / Score: 90
-        ↓
-LLM explains the result
-        ↓
-Escalation action can be proposed
-        ↓
-Human approval is required
-```
+- external services
+- delays and exceptions
+- business rules
+- human decisions
 
-## Key Capabilities
+The long-term goal of AI Logistics Copilot is to bring that context together so an operations user can move from:
 
-- Shipment and customer lookup
-- Shipment event inspection
-- External weather data integration
-- OpenAI LLM integration
-- LLM tool calling
-- Multi-step tool workflows
-- Deterministic delay-risk scoring
-- Shipment prioritization by risk
-- Structured operational recommendations
-- Human-in-the-loop action proposals
-- AI evaluation cases
-- Safety checks
-- Structured tool-call observability
-- Docker-based local environment
-- GitHub Actions CI
+**event → context → risk → recommendation → human decision → action**
+
+The AI should assist that process rather than make sensitive operational decisions independently.
+
+## Planned Workflow
+
+A typical future workflow could look like this:
+
+1. A shipment or operational event is detected.
+2. The system gathers relevant shipment and external context.
+3. The AI analyzes possible risks or exceptions.
+4. It explains what it found and proposes an action.
+5. A human reviews the recommendation when required.
+6. The approved action is executed.
+7. The result can later be evaluated and observed.
 
 ## Tech Stack
 
-### Frontend
-
-- React
-- TypeScript
-- Vite
-
-### API
-
-- Node.js
-- TypeScript
-- Express
-- PostgreSQL
-
-### AI Service
-
-- Python
-- FastAPI
-- OpenAI Responses API
-- Pydantic
-
-### Infrastructure
-
-- Docker
-- Docker Compose
-- GitHub Actions
-
-### External API
-
-- Open-Meteo weather API
+| Layer | Technology |
+| --- | --- |
+| Frontend | React, TypeScript |
+| API | Node.js, TypeScript, Express |
+| AI Service | Python, FastAPI |
+| Database | PostgreSQL |
+| Infrastructure | Docker |
+| CI | GitHub Actions |
 
 ## Architecture
 
 ```text
-┌──────────────────────────┐
-│ React + TypeScript       │
-│ Operations UI            │
-└─────────────┬────────────┘
-              │
-              ▼
-┌──────────────────────────┐
-│ Node.js + TypeScript API │
-│ Logistics Domain         │
-└─────────┬─────────┬──────┘
-          │         │
-          │         └──────────────► Open-Meteo
-          │
-          ▼
-┌──────────────────────────┐
-│ PostgreSQL               │
-│ Operational Data         │
-└──────────────────────────┘
+React + TypeScript
+        ↓
+Node.js + TypeScript
+        ↓
+PostgreSQL
 
-          Node API
-              │
-              ▼
-┌──────────────────────────┐
-│ Python + FastAPI         │
-│ AI Service               │
-├──────────────────────────┤
-│ LLM Tool Calling         │
-│ Risk Engine              │
-│ Human Approval Actions   │
-│ Evals                    │
-│ Observability            │
-└─────────────┬────────────┘
-              │
-              ▼
-         OpenAI API
+Node.js + TypeScript
+        ↓
+Python + FastAPI
+        ↓
+LLM / Tool Calling
 ```
+
+The Node.js API acts as the main application layer, while the Python service isolates AI-specific workloads and future LLM/tool integrations.
 
 ## Project Structure
 
 ```text
-ai-logistics-copilot/
-├── apps/
-│   ├── web/               # React + TypeScript frontend
-│   ├── api/               # Node.js + TypeScript logistics API
-│   └── ai-service/        # Python + FastAPI AI service
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-├── docker-compose.yml
-├── .env.example
-└── README.md
+apps/
+├── web/          React + TypeScript
+├── api/          Node.js + TypeScript
+└── ai-service/   Python + FastAPI
 ```
 
-## AI Tool Calling
+## Current Status
 
-The LLM does not access operational systems directly.
+### PR1 — Bootstrap and Project Architecture
 
-It can use a controlled set of tools:
+The first milestone establishes the foundation for the project.
 
-```text
-list_shipments
-get_shipment
-get_customer
-get_shipment_events
-get_weather
-calculate_delay_risk
-propose_shipment_escalation
-```
+Implemented:
 
-Tracking numbers such as:
+- React frontend
+- Node.js API
+- FastAPI AI service
+- PostgreSQL
+- Docker Compose
+- Service health checks
+- Node → PostgreSQL communication
+- Node → FastAPI communication
+- React → Node communication
+- Automated tests
+- GitHub Actions CI
 
-```text
-SHP-1010
-```
+The current milestone focuses on infrastructure and service communication. Logistics-specific intelligence and AI workflows are intentionally being introduced in later PRs.
 
-are resolved to internal numeric shipment IDs before tools requiring an internal ID are called.
+## Development Roadmap
 
-## Deterministic Risk Engine
+The next stages will move the project from technical foundation toward the full logistics copilot workflow.
 
-Delay risk is calculated by application code rather than invented by the LLM.
+### Planned
 
-The current engine considers:
+- Logistics domain models
+- Shipment APIs
+- Operations dashboard
+- External weather integration
+- LLM integration
+- Tool calling
+- Shipment risk analysis
+- Context-aware recommendations
+- Human-in-the-loop actions
+- AI evaluations
+- Observability
+- Failure and fallback handling
 
-- Shipment already marked as delayed
-- Estimated delivery date already passed
-- No shipment events for at least 24 hours
-- Heavy precipitation
-- Strong winds
-
-The engine returns:
-
-```json
-{
-  "risk": "HIGH",
-  "score": 90,
-  "reasons": [
-    "Shipment is already marked as delayed.",
-    "Estimated delivery date has already passed.",
-    "Shipment has had no new events for at least 24 hours."
-  ],
-  "recommended_action": "Escalate the shipment for immediate operational review."
-}
-```
-
-Risk levels are:
-
-```text
-LOW
-MEDIUM
-HIGH
-```
-
-The LLM explains these results but does not generate the risk score itself.
-
-## Human-in-the-Loop Actions
-
-The AI can prepare operational actions, but it cannot autonomously execute them.
-
-Example proposed action:
-
-```json
-{
-  "action_type": "ESCALATE_SHIPMENT",
-  "shipment_id": 10,
-  "reason": "High delay risk requires operational review.",
-  "requires_approval": true
-}
-```
-
-The workflow is:
-
-```text
-Risk detected
-      ↓
-AI proposes action
-      ↓
-Structured ProposedAction
-      ↓
-requires_approval = true
-      ↓
-Human decides
-```
-
-This project intentionally separates:
-
-```text
-Recommendation
-≠
-Execution
-```
-
-## Safety Principles
-
-The AI service follows several operational safety rules:
-
-- Never invent shipment, customer, event, or weather data.
-- Risk scores must come from the deterministic risk engine.
-- Operational facts and recommendations are kept separate.
-- Proposed escalations always require human approval.
-- The LLM cannot claim an action was executed without an execution tool confirming it.
-- Tool access is explicitly defined and limited.
-
-## AI Evaluations
-
-The project includes evaluation cases that validate expected AI behavior.
-
-Current scenarios include:
-
-```text
-shipment_status_lookup
-shipment_risk_analysis
-high_risk_action_proposal
-no_autonomous_execution
-```
-
-The eval system checks:
-
-- Required tools were used.
-- Forbidden tools were not used.
-- Proposed actions preserve human approval.
-- Unsafe actions fail evaluation.
-
-Example:
-
-```text
-Prompt
-  ↓
-LLM + tools
-  ↓
-Expected tools?
-Forbidden tools?
-Unsafe actions?
-  ↓
-PASS / FAIL
-```
-
-## Observability
-
-Tool execution emits structured JSON events.
-
-Example:
-
-```json
-{
-  "event": "tool_call_started",
-  "tool": "calculate_delay_risk",
-  "arguments": {
-    "shipment_id": 10
-  }
-}
-```
-
-and:
-
-```json
-{
-  "event": "tool_call_finished",
-  "tool": "calculate_delay_risk",
-  "success": true
-}
-```
-
-This makes agent behavior inspectable instead of treating the LLM as a black box.
-
-## Example Questions
-
-The copilot can answer questions such as:
-
-```text
-What is happening with shipment SHP-1010?
-```
-
-```text
-What is the delay risk for shipment SHP-1010?
-```
-
-```text
-Which 3 shipments should I worry about most right now?
-```
-
-```text
-What is the risk for shipment SHP-1010 and what should operations do about it?
-```
-
-```text
-Shipment SHP-1010 is high risk. Prepare the appropriate action.
-```
+The roadmap will continue evolving as the system is tested against more realistic operational scenarios.
 
 ## Run Locally
-
-### Requirements
-
-- Docker Desktop
-- Docker Compose
-- OpenAI API key
-
-Configure the required environment variables before starting the services.
-
-Then run:
 
 ```bash
 docker compose up --build
 ```
 
-Services are available at:
+Then open:
 
-### Web
+**Web**
 
 ```text
 http://localhost:5173
 ```
 
-### Node API
-
-```text
-http://localhost:3000
-```
-
-Health check:
+**API Health**
 
 ```text
 http://localhost:3000/health
 ```
 
-### AI Service
+**AI Service Health**
 
 ```text
-http://localhost:8000
+http://localhost:3000/health/ai
 ```
-
-Health check:
-
-```text
-http://localhost:8000/health
-```
-
-FastAPI documentation:
-
-```text
-http://localhost:8000/docs
-```
-
-## Testing
-
-### AI Service
-
-From:
-
-```text
-apps/ai-service
-```
-
-activate the Python virtual environment and run:
-
-```bash
-pytest -v
-```
-
-The current AI service suite contains **23 tests** covering:
-
-- API client failures
-- Tool calling
-- Sequential tool calls
-- Tool safety
-- Maximum tool-call rounds
-- FastAPI endpoints
-- Deterministic risk scoring
-- Evaluation logic
-- Human approval safety
-
-### Node API
-
-```bash
-cd apps/api
-npm test
-```
-
-### Web
-
-```bash
-cd apps/web
-npm run lint
-npm run build
-```
-
-## Continuous Integration
-
-GitHub Actions validates:
-
-```text
-Web
-├── npm ci
-├── lint
-└── build
-
-API
-├── npm ci
-├── tests
-└── build
-
-AI Service
-├── dependency install
-└── pytest
-
-Docker
-├── web image build
-├── API image build
-└── AI service image build
-```
-
-No production OpenAI credentials are required for the automated Python test suite.
-
-## Design Philosophy
-
-This project explores a practical pattern for production AI systems:
-
-```text
-LLM reasoning
-+
-controlled tools
-+
-deterministic business logic
-+
-external APIs
-+
-human approval
-+
-evals
-+
-observability
-```
-
-The goal is not to let an LLM control logistics operations autonomously.
-
-The goal is to use AI as an operational copilot while keeping business rules, safety boundaries, and final decisions under application and human control.
 
 ## Project Status
 
-Implemented:
+AI Logistics Copilot is an **active portfolio project under development**.
 
-- Project architecture and Docker environment
-- Logistics domain API
-- React operations interface
-- PostgreSQL integration
-- Weather API integration
-- OpenAI integration
-- LLM tool calling
-- Multi-step AI workflows
-- Deterministic shipment risk analysis
-- Shipment risk prioritization
-- Human-in-the-loop escalation proposals
-- AI safety evaluations
-- Structured observability
-- Automated tests
-- GitHub Actions CI
-
-The project is currently in its final portfolio-polish phase.
+The current repository represents the working state of the project as capabilities are added incrementally through pull requests. Some planned AI and logistics workflows are not implemented yet and are intentionally documented as roadmap items.
